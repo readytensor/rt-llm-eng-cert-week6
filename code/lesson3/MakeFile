@@ -1,0 +1,97 @@
+# Makefile: Clone and install mergekit, then merge models from a YAML config.
+# Works on Windows (quoted paths) and Unix-like systems.
+
+# ---- User-configurable variables ----
+# Path to your YAML merge configuration
+CONFIG ?= config.yaml
+# Output directory or name for merged model artifacts (final positional arg)
+OUTPUT_NAME ?= code
+# Branch selects merge tool: main -> mergekit-yaml, mixtral -> mergekit-moe
+BRANCH ?= main
+# RUNTIME: CPU or GPU (adds appropriate flags)
+RUNTIME ?= GPU
+# TRUST_REMOTE_CODE: set to 1 to pass --trust-remote-code
+TRUST_REMOTE_CODE ?= 1
+# Parent directory for output (OUTPUT_NAME is appended)
+OUT_PARENT_DIR ?= .
+
+# ---- Tooling / environment ----
+PYTHON ?= python
+GIT ?= git
+
+# ---- Derived paths / names ----
+MERGEKIT_DIR ?= mergekit
+OUT_PATH := $(OUT_PARENT_DIR)/$(OUTPUT_NAME)
+
+# ---- Merge tool selection ----
+MERGE_TOOL := $(if $(filter $(BRANCH),mixtral),mergekit-moe,mergekit-yaml)
+
+# ---- Flags assembly ----
+MERGE_FLAGS := --copy-tokenizer
+ifeq ($(RUNTIME),CPU)
+  MERGE_FLAGS += --allow-crimes --out-shard-size 1B --lazy-unpickle
+else ifeq ($(RUNTIME),GPU)
+  MERGE_FLAGS += --cuda --low-cpu-memory
+endif
+ifneq ($(TRUST_REMOTE_CODE),0)
+  MERGE_FLAGS += --trust-remote-code
+endif
+
+# ---- Command form (yaml tool has no subcommand) ----
+ifeq ($(MERGE_TOOL),mergekit-yaml)
+  MERGE_CMD := $(MERGE_TOOL) $(MERGE_FLAGS) "$(CONFIG)" "$(OUTPUT_NAME)"
+else
+  MERGE_CMD := $(MERGE_TOOL) "$(CONFIG)" merge $(MERGE_FLAGS) "$(OUTPUT_NAME)"
+endif
+
+.PHONY: help all clone install deps show-cmd merge clean distclean
+
+help:
+    @echo "Targets:"
+    @echo "  install       Clone and install mergekit (editable)"
+    @echo "  merge         Run merge: $(MERGE_CMD)"
+    @echo "  show-cmd      Print the exact merge command"
+    @echo "  clean         Remove merged output ($(OUT_PATH))"
+    @echo "  distclean     Also remove mergekit clone"
+    @echo "  all           do: install merge"
+    @echo ""
+    @echo "Variables you can override:"
+    @echo "  CONFIG=$(CONFIG)"
+    @echo "  OUTPUT_NAME=$(OUTPUT_NAME)"
+    @echo "  BRANCH=$(BRANCH) (main | mixtral)"
+    @echo "  RUNTIME=$(RUNTIME) (CPU | GPU)"
+    @echo "  TRUST_REMOTE_CODE=$(TRUST_REMOTE_CODE) (1 enable, 0 disable)"
+    @echo "  MERGEKIT_DIR=$(MERGEKIT_DIR)"
+    @echo "  OUT_PARENT_DIR=$(OUT_PARENT_DIR)"
+    @echo ""
+    @echo "Example: make install && make merge CONFIG=my.yaml OUTPUT_NAME=merged BRANCH=mixtral RUNTIME=CPU"
+
+all: install merge
+
+# ---- Clone & install ----
+$(MERGEKIT_DIR)/pyproject.toml:
+    @echo "Cloning mergekit into $(MERGEKIT_DIR)"
+    "$(GIT)" clone https://github.com/arcee-ai/mergekit.git "$(MERGEKIT_DIR)"
+
+clone: $(MERGEKIT_DIR)/pyproject.toml
+
+install: clone
+    "$(PYTHON)" -m pip install --upgrade pip
+    cd "$(MERGEKIT_DIR)" && "$(PYTHON)" -m pip install -e . --progress-bar off
+
+# Backward compatibility (old target name)
+deps: install
+
+show-cmd:
+    @echo $(MERGE_CMD)
+
+merge:
+    @if [ ! -f "$(CONFIG)" ]; then echo "Config file '$(CONFIG)' not found."; exit 1; fi
+    @echo "Running merge with tool: $(MERGE_TOOL)"
+    $(MERGE_CMD)
+
+clean:
+    -"$(PYTHON)" -c "import shutil,os; p='$(OUT_PATH)'; print('Removing', p) if os.path.isdir(p) else None; shutil.rmtree(p, ignore_errors=True)"
+
+distclean: clean
+    -"$(PYTHON)" -c "import shutil,os; d='$(MERGEKIT_DIR)'; print('Removing', d) if os.path.isdir(d) else None; shutil.rmtree(d, ignore_errors=True)"
