@@ -1,18 +1,18 @@
-#!/usr/bin/env python3
 import aws_cdk as cdk
-import os
-from sage_maker_stack import SageMakerTrainingStack
+from sagemaker_stack import SageMakerTrainingStack
 from dotenv import load_dotenv
+from utils.config_utils import load_config
 
 load_dotenv()
 
-bucket_name = os.getenv("BUCKET")
+cfg = load_config()
+
 app = cdk.App()
 
 SageMakerTrainingStack(
     app,
     "SageMakerTrainingStack",
-    bucket_name=bucket_name,
+    bucket_name=cfg["bucket"],
 )
 
 app.synth()

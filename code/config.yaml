@@ -41,7 +41,7 @@ seed: 42
 # ==============================================
 # Quantization (for QLoRA)
 # ==============================================
-load_in_4bit: false
+load_in_4bit: true
 bnb_4bit_quant_type: nf4
 bnb_4bit_use_double_quant: true
 bnb_4bit_compute_dtype: bfloat16
@@ -58,7 +58,7 @@ target_modules: ["q_proj", "v_proj"]
 # Training Configuration
 # ==============================================
 num_epochs: 1
-max_steps: 10
+max_steps: 300
 learning_rate: 2e-4
 batch_size: 4
 gradient_accumulation_steps: 4
@@ -78,3 +78,12 @@ report_to: none
 output_dir: ./outputs/lora_samsum
 wandb_project: llama3_samsum
 wandb_run_name: lora-finetuning-default-hps
+
+# ==============================================
+# SageMaker Configuration
+# ==============================================
+sagemaker_instance_type: ml.p3.2xlarge
+sagemaker_instance_count: 1
+sagemaker_base_job_name: llama-3-2-1b-instruct-train
+bucket: sagemaker-llm-training-bucket
+output_path: llama-3-2-1b-instruct

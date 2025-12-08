@@ -3,26 +3,27 @@ from sagemaker import Session
 from dotenv import load_dotenv
 from sagemaker.huggingface import HuggingFace
 from paths import CODE_DIR
+from utils.config_utils import load_config
 
 
 load_dotenv()
 
 role = os.getenv("SAGEMAKER_EXECUTION_ROLE_ARN")
-bucket = os.getenv("BUCKET")
 region = os.getenv("REGION")
 hf_token = os.getenv("HF_TOKEN")
 
 
+cfg = load_config()
 # Session and S3 paths
 sess = Session()
-output_path = f"s3://{bucket}/llama-3-2-1b-instruct/"
+output_path = f"s3://{cfg['bucket']}/{cfg['output_path']}/"
 
 
 # HuggingFace estimator configuration
 huggingface_estimator = HuggingFace(
     entry_point="train_qlora.py",
     source_dir=CODE_DIR,
-    instance_type="ml.p3.2xlarge",
+    instance_type=cfg["sagemaker_instance_type"],
     instance_count=1,
     role=role,
     transformers_version="4.56",
@@ -35,7 +36,7 @@ huggingface_estimator = HuggingFace(
         "TRANSFORMERS_CACHE": "/tmp/transformers_cache",
         "HF_DATASETS_CACHE": "/tmp/datasets_cache",
     },
-    base_job_name="llama-3-2-1b-instruct-train",
+    base_job_name=cfg["sagemaker_base_job_name"],
     output_path=output_path,
 )
 
