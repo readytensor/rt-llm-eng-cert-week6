@@ -1,0 +1,8 @@
+lessons/
+.env
+.venv
+__pycache__/
+data
+cdk.out
+wandb
+.DS_Store

@@ -1,0 +1,9 @@
+transformers
+wandb
+bitsandbytes
+peft
+datasets
+torch
+python-dotenv
+pyyaml
+accelerate
