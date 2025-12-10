@@ -60,7 +60,7 @@ target_modules: ["q_proj", "v_proj"]
 num_epochs: 1
 max_steps: -1
 learning_rate: 2e-4
-batch_size: 4
+batch_size: 1
 gradient_accumulation_steps: 4
 sequence_len: 512
 lr_scheduler: cosine
@@ -87,3 +87,11 @@ sagemaker_instance_count: 1
 sagemaker_base_job_name: llama-3-2-1b-instruct-train
 bucket: sagemaker-llm-training-bucket
 output_path: llama-3-2-1b-instruct
+
+# ==============================================
+# Bedrock Configuration
+# ==============================================
+bedrock_model_id: meta.llama3-2-1b-instruct-v1:0:128k
+bedrock_job_name: llama-3-2-1b-instruct-train
+bedrock_bucket: bedrock-bucket-llm-eng
+bedrock_data_dir: bedrock-training-data
