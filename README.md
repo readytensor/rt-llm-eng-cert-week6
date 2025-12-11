@@ -55,12 +55,28 @@ HF_TOKEN=your_hf_token
 
 ### SageMaker Training Workflow
 
-**Step 1: Create S3 Bucket**
+**Step 1: Configure AWS CLI**
+
+Before creating a bucket, make sure you have the AWS CLI installed. If not, [install it here](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+
+Then, configure your AWS credentials by running:
+
+```bash
+aws configure
+```
+
+This will prompt you for your AWS Access Key, Secret Access Key, region, and output format.
+
+**Step 2: Create S3 Bucket**
+
+If you don't have an S3 bucket yet, run:
 
 ```bash
 cd code
 python create_s3_bucket.py
 ```
+
+You may also create the S3 bucket through the AWS Console.
 
 **Step 2: Launch Training Job**
 
