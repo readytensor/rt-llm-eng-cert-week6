@@ -8,3 +8,4 @@ wandb
 .DS_Store
 cdk.context.json
 node_modules
+tmp/
