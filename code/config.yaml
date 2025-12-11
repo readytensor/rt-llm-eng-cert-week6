@@ -20,15 +20,6 @@ dataset:
     test: 200
   seed: 42
 
-# This is for Axolotl
-datasets:
-  - path: knkarthick/samsum
-    cache_dir: ../data/datasets
-    field_map:
-      input: dialogue
-      output: summary
-    type: completion
-
 task_instruction: >
   You are a helpful assistant who writes concise, factual summaries of conversations.
   Summarize the following conversation into a single sentence.
