@@ -87,36 +87,38 @@ def parse_batch_results(result_files):
 
 def match_with_references(predictions, val_dataset, field_map):
     """
-    Match predictions with reference summaries.
-    Assumes same order as validation dataset.
-
+    Match predictions with reference summaries using recordId.
+    Bedrock batch jobs include recordId (1-indexed) to maintain order.
+    
     Args:
         predictions: List of prediction dicts from Bedrock
         val_dataset: Original validation dataset
         field_map: Field mapping from config
-
+    
     Returns:
         List of dicts with dialogue, reference, and prediction
     """
+    # Create a dictionary mapping recordId to prediction
+    pred_dict = {}
+    for pred in predictions:
+        record_id = int(pred.get('recordId', -1))
+        generated = pred.get('modelOutput', {}).get('generation', '')
+        pred_dict[record_id] = generated.strip()
+    
+    # Match predictions with dataset
+    # recordId is 1-indexed, dataset is 0-indexed
     results = []
-
-    for i, pred in enumerate(predictions):
-        if i >= len(val_dataset):
-            break
-
-        sample = val_dataset[i]
-
-        # Extract generated text from Bedrock response
-        generated = pred.get("modelOutput", {}).get("generation", "")
-
-        results.append(
-            {
-                "dialogue": sample[field_map["input"]],
-                "reference": sample[field_map["output"]],
-                "prediction": generated.strip(),
-            }
-        )
-
+    
+    for i, sample in enumerate(val_dataset):
+        # recordId = i + 1 (convert 0-indexed to 1-indexed)
+        prediction = pred_dict.get(i + 1, '')
+        
+        results.append({
+            'dialogue': sample[field_map['input']],
+            'reference': sample[field_map['output']],
+            'prediction': prediction
+        })
+    
     return results
 
 
@@ -238,3 +240,8 @@ def main():
     print("=" * 80)
     print(f"Predictions: {output_file}")
     print(f"Metrics: {metrics_file}")
+    print("="*80)
+
+
+if __name__ == "__main__":
+    main()
