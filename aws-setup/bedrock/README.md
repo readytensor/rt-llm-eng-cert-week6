@@ -211,27 +211,7 @@ python code/bedrock_inference_batch.py --pretrained
 python code/bedrock_evaluate_batch.py --pretrained
 ```
 
-### Example 3: Fine-tuning
-
-```bash
-# Data should already be uploaded from Example 2
-
-# Start fine-tuning job
-python code/bedrock_finetune.py
-
-# After training completes, run batch inference with fine-tuned model
-python code/bedrock_inference_batch.py --finetuned
-
-# Evaluate fine-tuned results
-python code/bedrock_evaluate_batch.py --finetuned
-```
-
----
-
-## Monitoring Jobs
-
-- **Batch Inference**: AWS Console → Bedrock → Batch inference (left menu)
-- **Fine-tuning**: AWS Console → Bedrock → Custom models → Jobs tab
+To monitor: AWS Console → Bedrock → Batch inference (left menu)
 
 ---
 
