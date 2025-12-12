@@ -1,11 +1,25 @@
-lessons/
-.env
-.venv
+# Byte-compiled / optimized / DLL files
 __pycache__/
-data
+*.py[codz]
+*$py.class
+
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+
 cdk.out
 wandb
 .DS_Store
 cdk.context.json
-node_modules
+
+# custom folders to ignore
 tmp/
+data/datasets/
