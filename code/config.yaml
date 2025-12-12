@@ -77,7 +77,7 @@ sagemaker_instance_type: ml.p3.2xlarge
 sagemaker_instance_count: 1
 sagemaker_base_job_name: llama-3-2-1b-instruct-train
 bucket: sagemaker-llm-training-bucket
-output_path: llama-3-2-1b-instruct
+output_path: outputs/llama3-2-1b-samsum-finetune
 
 # ==============================================
 # Bedrock Configuration
@@ -87,5 +87,4 @@ bedrock_custom_model_arn: "" # Will be filled after fine-tuning
 bedrock_job_name: llama-3-2-1b-instruct-train
 bedrock_bucket: bedrock-bucket-llm-eng-testing
 bedrock_data_dir: bedrock-samsum-dataset
-bedrock_batch_outputs_pretrained: bedrock-batch-outputs-pretrained
-bedrock_batch_outputs_finetuned: bedrock-batch-outputs-finetuned
+bedrock_batch_outputs_dir: bedrock-batch-outputs
