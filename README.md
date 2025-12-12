@@ -21,16 +21,32 @@ Both workflows fine-tune Llama 3.2 1B Instruct on the SAMSum conversation summar
 Before running any training jobs, ensure you have:
 
 1. **AWS Account** with IAM user configured (see Week 7 Lesson 2)
-2. **AWS Credentials** configured via `aws configure` or environment variables
+2. **AWS Credentials** configured via `aws configure` using aws cli
 3. **SageMaker Execution Role** with S3 and CloudWatch permissions
 4. **Bedrock Role** (for Bedrock workflows) with model access enabled
 5. **Hugging Face Token** for accessing gated models
 
-### Installation
+### Setup and Installation
+
+Create a virtual environment and install the dependencies:
 
 ```bash
-pip install -r code/requirements.txt
-pip install sagemaker boto3
+python -m venv venv
+source venv/bin/activate
+```
+
+Then, install the dependencies:
+
+```bash
+# for SageMaker lessons
+pip install -r requirements-sagemaker.txt
+```
+
+or
+
+```bash
+# for Bedrock lessons
+pip install -r requirements-bedrock.txt
 ```
 
 ### Environment Setup
