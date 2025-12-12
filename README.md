@@ -19,17 +19,17 @@ This section demonstrates how to perform inference using AWS Bedrock, including 
 Create a virtual environment:
 
 ```bash
-python -m venv venv
+python -m venv venv-bedrock
 ```
 
 Activate the virtual environment:
 
 ```bash
 # On Windows:
-venv\Scripts\activate
+venv-bedrock\Scripts\activate
 
 # On Mac/Linux:
-source venv/bin/activate
+source venv-bedrock/bin/activate
 ```
 
 ### 2. Dependency Installation
@@ -119,17 +119,17 @@ This section demonstrates how to train LLMs using SageMaker with QLoRA fine-tuni
 Create a virtual environment:
 
 ```bash
-python -m venv venv
+python -m venv venv-sagemaker
 ```
 
 Activate the virtual environment:
 
 ```bash
 # On Windows:
-venv\Scripts\activate
+venv-sagemaker\Scripts\activate
 
 # On Mac/Linux:
-source venv/bin/activate
+source venv-sagemaker/bin/activate
 ```
 
 ### 2. Dependency Installation

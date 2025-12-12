@@ -10,6 +10,8 @@ __pycache__/
 .venv
 env/
 venv/
+venv-bedrock/
+venv-sagemaker/
 ENV/
 env.bak/
 venv.bak/
