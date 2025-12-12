@@ -100,6 +100,8 @@ python bedrock_inference_batch.py
 python bedrock_evaluate_batch.py
 ```
 
+To monitor inference progress in the AWS Console: AWS Console → Bedrock → Batch inference (left menu)
+
 ---
 
 ## Amazon SageMaker Examples

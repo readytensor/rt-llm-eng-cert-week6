@@ -128,55 +128,6 @@ Your IAM user needs permission to pass the Bedrock role to AWS services.
 
 ---
 
-## Step 5: Update Configuration Files
-
-### 5.1 Update config.yaml
-
-Edit `code/config.yaml`:
-
-```yaml
-bedrock_model_id: us.meta.llama3-2-1b-instruct-v1:0
-bedrock_bucket: your-unique-bucket-name # Must be globally unique
-bedrock_data_dir: bedrock-samsum-dataset
-bedrock_batch_outputs_pretrained: bedrock-batch-outputs-pretrained
-bedrock_batch_outputs_finetuned: bedrock-batch-outputs-finetuned
-```
-
-### 5.2 Create .env file
-
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```bash
-BEDROCK_ROLE_ARN=arn:aws:iam::YOUR_ACCOUNT_ID:role/Bedrock-Job-Execution-Role
-AWS_REGION=us-east-1
-```
-
----
-
-## Step 6: Install Dependencies
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate it
-# On Windows:
-venv\Scripts\activate
-# On Mac/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements-bedrock.txt
-```
-
----
-
 ## Verification Checklist
 
 Before running the examples, verify:
@@ -190,36 +141,10 @@ Before running the examples, verify:
 
 ---
 
-## Running the Examples
-
-### Example 1: Single Inference
-
-```bash
-python code/bedrock_inference_single.py
-```
-
-### Example 2: Batch Inference (Pretrained)
-
-```bash
-# Prepare and upload data to S3
-python code/prepare_bedrock_data.py
-
-# Run batch inference job
-python code/bedrock_inference_batch.py --pretrained
-
-# Evaluate results
-python code/bedrock_evaluate_batch.py --pretrained
-```
-
-To monitor: AWS Console → Bedrock → Batch inference (left menu)
-
----
-
 ## Cost Considerations
 
 - **Inference**: Charged per input/output token
 - **Batch Inference**: Lower cost than real-time inference
-- **Fine-tuning**: Charged per token processed during training
 - **S3 Storage**: Minimal cost for small datasets
 
 Always clean up resources after learning exercises to avoid unnecessary charges.
