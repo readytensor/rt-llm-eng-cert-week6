@@ -2,9 +2,7 @@
 Shared utilities for inference and evaluation — text generation and metric computation.
 """
 
-import torch
 from tqdm import tqdm
-from transformers import pipeline
 import evaluate
 
 
@@ -32,6 +30,9 @@ def generate_predictions(
     Returns:
         list[str]: Generated summaries.
     """
+    from transformers import pipeline
+    
+
     if num_samples is not None and num_samples < len(dataset):
         dataset = dataset.select(range(num_samples))
 
