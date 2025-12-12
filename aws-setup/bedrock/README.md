@@ -25,6 +25,8 @@ This guide walks through the IAM configuration needed to run the Bedrock inferen
 
 ### 1.2 Create IAM User
 
+(if not already created)
+
 1. Go to IAM → Users → Create user
 2. Username: Choose your username (e.g., `your-name`)
 3. Add user to `ai-engineer` group
@@ -49,6 +51,9 @@ Enter:
 ---
 
 ## Step 2: Request Bedrock Model Access
+
+(most models are already enabled. A few models like from Anthropic require approval)
+Note: The AWS console may have changed but follow the steps in essence.
 
 1. Go to AWS Console → Bedrock → Model access (left sidebar)
 2. Click "Manage model access"
@@ -81,7 +86,7 @@ This role allows Bedrock to access your S3 data and invoke models on your behalf
 2. Click JSON tab
 3. Copy contents from `aws-setup/bedrock-job-execution-policy.json`
 4. **Replace `YOUR_BUCKET_NAME`** with your actual bucket name (e.g., `bedrock-bucket-llm-eng-testing`)
-5. Policy name: `Bedrock-Job-Execution-Policy`
+5. Policy name: `Bedrock-Job-Execution-Policy` (you can name it anything, but make sure to replace it in the next step)
 6. Create policy
 
 ### 3.2 Create IAM Role
@@ -177,7 +182,6 @@ pip install -r requirements-bedrock.txt
 Before running the examples, verify:
 
 - [ ] AWS CLI configured with credentials
-- [ ] Llama 3.2 1B model access granted in Bedrock
 - [ ] Inference profile ID added to `config.yaml`
 - [ ] IAM role `Bedrock-Job-Execution-Role` created
 - [ ] Role ARN added to `.env` file
@@ -228,25 +232,6 @@ python code/bedrock_evaluate_batch.py --finetuned
 
 - **Batch Inference**: AWS Console → Bedrock → Batch inference (left menu)
 - **Fine-tuning**: AWS Console → Bedrock → Custom models → Jobs tab
-
----
-
-## Troubleshooting
-
-### AccessDeniedException
-
-- Check that model access is granted in Bedrock console
-- Verify role ARN is correct in `.env`
-- Ensure PassRole policy is attached to your user group
-
-### S3 Permission Errors
-
-- Update bucket name in `bedrock-job-execution-policy.json`
-- Verify policy is attached to the Bedrock role
-
-### "User is not authorized to perform: iam:PassRole"
-
-- Attach `bedrock-passrole-policy.json` to your IAM user group
 
 ---
 
