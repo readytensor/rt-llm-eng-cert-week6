@@ -82,8 +82,10 @@ output_path: llama-3-2-1b-instruct
 # ==============================================
 # Bedrock Configuration
 # ==============================================
-bedrock_model_inference_profile_id: us.meta.llama3-2-1b-instruct-v1:0
+bedrock_model_id: us.meta.llama3-2-1b-instruct-v1:0 # this is inference profile id, not model_id
+bedrock_custom_model_arn: "" # Will be filled after fine-tuning
 bedrock_job_name: llama-3-2-1b-instruct-train
 bedrock_bucket: bedrock-bucket-llm-eng-testing
 bedrock_data_dir: bedrock-samsum-dataset
-bedrock_batch_outputs_dir: bedrock-samsum-dataset-outputs
+bedrock_batch_outputs_pretrained: bedrock-batch-outputs-pretrained
+bedrock_batch_outputs_finetuned: bedrock-batch-outputs-finetuned
