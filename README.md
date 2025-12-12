@@ -92,10 +92,16 @@ python bedrock_inference_single.py
 
 #### Batch Inference and Evaluation
 
-Run batch inference on validation data and evaluate the results:
+Before running batch inference, prepare and upload the data to S3:
 
 ```bash
 cd code
+python prepare_bedrock_data.py
+```
+
+Then run batch inference on validation data and evaluate the results:
+
+```bash
 python bedrock_inference_batch.py
 python bedrock_evaluate_batch.py
 ```
