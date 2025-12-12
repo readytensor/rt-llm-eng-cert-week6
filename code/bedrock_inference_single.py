@@ -83,13 +83,13 @@ def main():
     print("\n" + "=" * 80)
     print("RUNNING BEDROCK INFERENCE")
     print("=" * 80)
-    print(f"\nModel: {cfg['bedrock_model_inference_profile_id']}")
+    print(f"\nModel: {cfg['bedrock_model_id']}")
     print(f"\nDialogue:\n{dialogue}")
     print(f"\nReference Summary:\n{reference_summary}")
     print("\nGenerating summary...")
 
     generated_summary = invoke_bedrock_model(
-        model_id=cfg["bedrock_model_inference_profile_id"],
+        model_id=cfg["bedrock_model_id"],
         prompt=prompt,
         max_tokens=128,
         temperature=0.7,

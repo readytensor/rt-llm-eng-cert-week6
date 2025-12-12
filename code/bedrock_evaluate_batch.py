@@ -5,8 +5,8 @@ Download batch inference results from S3 and evaluate predictions.
 Can evaluate results from pretrained or fine-tuned models.
 
 Usage:
-    python bedrock_evaluate_batch.py --pretrained
-    python bedrock_evaluate_batch.py --finetuned
+    python bedrock_evaluate_batch.py --pretrained <job_name>
+    python bedrock_evaluate_batch.py --finetuned <job_name>
 """
 
 import json
@@ -122,17 +122,10 @@ def match_with_references(predictions, val_dataset, field_map):
     return results
 
 
-def main():
-    # Check for model type flag
-    if len(sys.argv) < 2 or sys.argv[1] not in ["--pretrained", "--finetuned"]:
-        print("Usage: python bedrock_evaluate_batch.py [--pretrained | --finetuned]")
-        print("\nExamples:")
-        print("  python bedrock_evaluate_batch.py --pretrained")
-        print("  python bedrock_evaluate_batch.py --finetuned")
-        return
-
-    model_type = sys.argv[1].replace("--", "")  # 'pretrained' or 'finetuned'
-
+def run_evaluation(job_id:str):
+    """
+    Run evaluation on batch inference results.
+    """
     # Load configuration
     print("Loading configuration...")
     with open(CONFIG_FILE_PATH, "r", encoding="utf-8") as f:
@@ -143,29 +136,28 @@ def main():
     bucket = cfg["bedrock_bucket"]
     region = os.getenv("AWS_REGION", "us-east-1")
 
-    # Select appropriate output directory based on model type
-    if model_type == "pretrained":
-        output_dir = cfg["bedrock_batch_outputs_pretrained"]
-    else:
-        output_dir = cfg["bedrock_batch_outputs_finetuned"]
-
     # Create S3 client
     s3_client = boto3.client("s3", region_name=region)
 
     print("\n" + "=" * 80)
-    print(f"EVALUATE BATCH INFERENCE RESULTS ({model_type.upper()} MODEL)")
+    print("EVALUATE BATCH INFERENCE RESULTS")
+    print("=" * 80)
+    print(f"Job: {job_id}")
     print("=" * 80)
 
-    # Download results
-    local_dir = os.path.join(BATCH_RESULTS_DIR, model_type)
+    # Download results from specific job folder
+    output_dir = cfg["bedrock_batch_outputs_dir"]
+    job_prefix = f"{output_dir}/{job_id}"
+    local_dir = os.path.join(BATCH_RESULTS_DIR, job_id)
+    
     result_files = download_results_from_s3(
-        s3_client=s3_client, bucket=bucket, prefix=output_dir, local_dir=local_dir
+        s3_client=s3_client, bucket=bucket, prefix=job_prefix, local_dir=local_dir
     )
 
     if not result_files:
-        print(f"\n✗ No results found for {model_type} model")
-        print(f"   Looked in: s3://{bucket}/{output_dir}")
-        print("\n   Make sure you ran: python bedrock_inference_batch.py")
+        print(f"\n✗ No results found for job: {job_id}")
+        print(f"   Looked in: s3://{bucket}/{job_prefix}")
+        print("\n   Make sure the job completed successfully")
         return
 
     # Parse predictions
@@ -181,7 +173,7 @@ def main():
     final_results = match_with_references(predictions, val_dataset, field_map)
 
     # Save combined results
-    output_file = os.path.join(local_dir, f"bedrock_{model_type}_predictions.jsonl")
+    output_file = os.path.join(local_dir, f"{job_id}_predictions.jsonl")
     with open(output_file, "w", encoding="utf-8") as f:
         for result in final_results:
             f.write(json.dumps(result) + "\n")
@@ -212,7 +204,7 @@ def main():
 
     # Display results
     results = {
-        "model_type": model_type,
+        "job_name": job_id,
         "model_id": model_id,
         "num_samples": len(final_results),
         "rouge1": scores["rouge1"],
@@ -220,7 +212,7 @@ def main():
         "rougeL": scores["rougeL"],
     }
 
-    print(f"\nModel type: {results['model_type']}")
+    print(f"\nJob: {results['job_name']}")
     print(f"Model ID: {results['model_id']}")
     print(f"Samples evaluated: {results['num_samples']}")
     print("\nROUGE Scores:")
@@ -229,7 +221,7 @@ def main():
     print(f"  ROUGE-L: {results['rougeL']:.4f}")
 
     # Save metrics
-    metrics_file = os.path.join(local_dir, f"bedrock_{model_type}_metrics.json")
+    metrics_file = os.path.join(local_dir, f"{job_id}_metrics.json")
     with open(metrics_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
@@ -241,6 +233,24 @@ def main():
     print(f"Predictions: {output_file}")
     print(f"Metrics: {metrics_file}")
     print("="*80)
+
+    return results
+
+def main():
+    # Check for job name argument
+    if len(sys.argv) < 2:
+        print("Usage: code/bedrock_evaluate_batch.py <job_id>")
+        print("\nExample:")
+        print("  code/bedrock_evaluate_batch.py j45wouwjfza7")
+        return
+
+    job_id = sys.argv[1]
+    
+    results = run_evaluation(job_id)
+    return results
+
+
+
 
 
 if __name__ == "__main__":
