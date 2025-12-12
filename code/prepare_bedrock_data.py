@@ -1,195 +1,165 @@
-import os
+"""
+Prepare and upload training data for Bedrock fine-tuning.
+Formats dataset into JSONL with Llama's chat template and uploads to S3.
+"""
+
 import json
-import boto3
-from botocore.exceptions import ClientError
-from dotenv import load_dotenv
-from utils.config_utils import load_config
+import os
+import yaml
 from utils.data_utils import load_and_prepare_dataset
-from paths import OUTPUTS_DIR
+from paths import CONFIG_FILE_PATH, DATA_DIR
 from create_s3_bucket import create_s3_bucket
 
-load_dotenv()
 
-# Load configuration
-cfg = load_config()
-region = os.getenv("REGION", "us-east-1")
-bucket_name = cfg["bedrock_bucket"]
-
-# Initialize S3 client
-s3_client = boto3.client("s3", region_name=region)
-
-
-def convert_to_bedrock_format(example, system_prompt=None):
+def format_sample_for_bedrock(sample, field_map, task_instruction):
     """
-    Convert a samsum dataset example to Bedrock conversation format.
+    Format a single sample into Bedrock's expected JSONL format for Llama models.
+
+    Bedrock expects:
+    - "prompt": User message with Llama chat template tags
+    - "completion": Assistant response with closing tag
 
     Args:
-        example: Dict with 'dialogue' and 'summary' keys
-        system_prompt: Optional system prompt to include
+        sample: Dataset sample with input/output fields
+        field_map: Mapping of dataset fields (input -> dialogue, output -> summary)
+        task_instruction: System/task instruction text
 
     Returns:
-        dict: Formatted for Bedrock fine-tuning
+        Dictionary with "prompt" and "completion" keys
     """
-    if system_prompt is None:
-        system_prompt = "You are a helpful assistant that creates concise summaries of conversations."
+    # Get input and output from sample
+    dialogue = sample[field_map["input"]]
+    summary = sample[field_map["output"]]
 
-    # Create the bedrock conversation format
-    bedrock_example = {
-        "schemaVersion": "bedrock-conversation-2024",
-        "system": [{"text": system_prompt}],
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "text": f"Summarize the following conversation:\n\n{example['dialogue']}"
-                    }
-                ],
-            },
-            {"role": "assistant", "content": [{"text": example["summary"]}]},
-        ],
-    }
+    # Build user message
+    user_message = f"{task_instruction}\n\n## Dialogue:\n{dialogue}\n## Summary:"
 
-    return bedrock_example
+    # Format with Llama chat template
+    prompt = f"""<|begin_of_text|><|start_header_id|>user<|end_header_id|>
+{user_message}
+<|eot_id|>
+<|start_header_id|>assistant<|end_header_id|>
+"""
+
+    # Completion should include closing tag
+    completion = f" {summary}<|eot_id|>"
+
+    return {"prompt": prompt, "completion": completion}
 
 
-def create_jsonl_file(dataset, output_file, system_prompt=None):
+def save_dataset_as_jsonl(dataset, output_file, field_map, task_instruction):
     """
-    Convert dataset to JSONL format and save to file.
+    Convert dataset to JSONL format and save locally.
 
     Args:
-        dataset: HuggingFace dataset
+        dataset: HuggingFace dataset split
         output_file: Path to save JSONL file
-        system_prompt: Optional system prompt
-        max_samples: Optional limit on number of samples
-
-    Returns:
-        tuple: (output_file, number of examples)
+        field_map: Field mapping from config
+        task_instruction: Task instruction from config
     """
-    print(f"Creating {output_file}...")
-    num_examples = 0
+    print(f"Formatting {len(dataset)} samples...")
+
     with open(output_file, "w", encoding="utf-8") as f:
-        for example in dataset:
-            bedrock_example = convert_to_bedrock_format(example, system_prompt)
-            f.write(json.dumps(bedrock_example) + "\n")
-            num_examples += 1
+        for sample in dataset:
+            formatted = format_sample_for_bedrock(sample, field_map, task_instruction)
+            f.write(json.dumps(formatted) + "\n")
 
-    print(f"✓ Created {output_file} with {num_examples} examples")
-    return output_file, num_examples
+    print(f"✓ Saved to: {output_file}")
 
 
-def upload_to_s3(local_file, s3_key):
+def upload_to_s3(local_file, bucket, s3_key):
     """
-    Upload a file to S3.
+    Upload file to S3 bucket.
 
     Args:
-        local_file: Local file path
-        s3_key: S3 key (path in bucket)
+        local_file: Path to local file
+        bucket: S3 bucket name
+        s3_key: S3 object key (path within bucket)
 
     Returns:
-        str: S3 URI of the uploaded file
+        S3 URI of uploaded file
     """
+    import boto3
+
+    s3_client = boto3.client("s3")
+
+    print(f"Uploading to s3://{bucket}/{s3_key}...")
+
     try:
-        print(f"Uploading {local_file} to s3://{bucket_name}/{s3_key}...")
-        s3_client.upload_file(local_file, bucket_name, s3_key)
-        s3_uri = f"s3://{bucket_name}/{s3_key}"
-        print(f"✓ Uploaded to {s3_uri}")
+        s3_client.upload_file(local_file, bucket, s3_key)
+        s3_uri = f"s3://{bucket}/{s3_key}"
+        print("✓ Upload complete")
         return s3_uri
-    except ClientError as e:
-        print(f"✗ Error uploading to S3: {e}")
-        return None
+    except Exception as e:
+        print(f"✗ Upload failed: {e}")
+        raise
 
 
 def main():
-    """
-    Main function to prepare and upload Bedrock training data.
-    """
-    print("=" * 60)
-    print("Prepare Bedrock Training Data from SamSum")
-    print("=" * 60)
+    # Load configuration
+    print("Loading configuration...")
+    with open(CONFIG_FILE_PATH, "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
 
-    # Create S3 bucket if it doesn't exist
-    create_s3_bucket(bucket_name, region)
+    # Get config values
+    bucket = cfg["bedrock_bucket"]
+    data_dir = cfg["bedrock_data_dir"]
+    region = os.getenv("REGION", "us-east-1")
 
-    # Configuration
-    dataset_name = cfg["dataset"]["name"]
-    system_prompt = cfg["task_instruction"]
-
-    # Output configuration
-    output_dir = os.path.join(OUTPUTS_DIR, cfg["bedrock_data_dir"])
-    os.makedirs(output_dir, exist_ok=True)
-
-    train_file = os.path.join(output_dir, "train.jsonl")
-    val_file = os.path.join(output_dir, "validation.jsonl")
-
-    # S3 paths
-    train_s3_key = "llm-tuning-data/train.jsonl"
-    val_s3_key = "llm-tuning-data/validation.jsonl"
-
-    # Step 1: Load dataset
-    print("\n" + "=" * 60)
-    print("Step 1: Loading SamSum dataset from HuggingFace")
-    print("=" * 60)
-
-    try:
-        print(f"Loading dataset: {dataset_name}")
-        train, val, test = load_and_prepare_dataset(cfg)
-        print(f"✓ Dataset loaded successfully!")
-        print(f"  - Train samples: {len(train)}")
-        print(f"  - Validation samples: {len(val)}")
-        print(f"  - Test samples: {len(test)}")
-    except Exception as e:
-        print(f"✗ Error loading dataset: {e}")
+    # Ensure bucket exists
+    print("\nChecking S3 bucket...")
+    if not create_s3_bucket(bucket, region):
+        print("✗ Failed to create or access bucket. Exiting.")
         return
 
-    # Step 2: Create training JSONL
-    print("\n" + "=" * 60)
-    print("Step 2: Creating training JSONL file")
-    print("=" * 60)
+    # Load all dataset splits
+    print("\nLoading dataset splits...")
+    train_dataset, val_dataset, test_dataset = load_and_prepare_dataset(cfg)
 
-    train_file, num_train = create_jsonl_file(
-        train,
-        train_file,
-        system_prompt=system_prompt,
-    )
+    # Prepare output directory
+    os.makedirs(DATA_DIR, exist_ok=True)
 
-    # Step 3: Create validation JSONL
-    print("\n" + "=" * 60)
-    print("Step 3: Creating validation JSONL file")
-    print("=" * 60)
+    # Get dataset config
+    field_map = cfg["dataset"]["field_map"]
+    task_instruction = cfg["task_instruction"]
 
-    val_file, num_val = create_jsonl_file(
-        val,
-        val_file,
-        system_prompt=system_prompt,
-    )
+    # Process each split
+    splits = {
+        "training": train_dataset,
+        "validation": val_dataset,
+        "test": test_dataset,
+    }
 
-    # Step 4: Validate the files
-    print("\n" + "=" * 60)
-    print("Step 4: Validating JSONL files")
-    print("=" * 60)
+    s3_uris = {}
 
-    # Step 5: Upload to S3
-    print("\n" + "=" * 60)
-    print("Step 5: Uploading to S3")
-    print("=" * 60)
+    print("\n" + "=" * 80)
+    print("PREPARING AND UPLOADING DATASET SPLITS")
+    print("=" * 80)
 
-    train_s3_uri = upload_to_s3(train_file, train_s3_key)
-    val_s3_uri = upload_to_s3(val_file, val_s3_key)
+    for split_name, dataset in splits.items():
+        print(f"\n--- {split_name.upper()} SPLIT ---")
 
-    # Summary
-    print("\n" + "=" * 60)
-    print("Summary")
-    print("=" * 60)
-    print(f"✓ Training data ready!")
-    print(f"  - Local file: {train_file}")
-    print(f"  - S3 URI: {train_s3_uri}")
-    print(f"  - Examples: {num_train}")
-    print()
-    print(f"✓ Validation data ready!")
-    print(f"  - Local file: {val_file}")
-    print(f"  - S3 URI: {val_s3_uri}")
-    print(f"  - Examples: {num_val}")
+        # Save locally
+        local_file = os.path.join(DATA_DIR, f"bedrock_{split_name}_data.jsonl")
+        save_dataset_as_jsonl(dataset, local_file, field_map, task_instruction)
+
+        # Upload to S3
+        s3_key = f"{data_dir}/{split_name}.jsonl"
+        s3_uri = upload_to_s3(local_file, bucket, s3_key)
+        s3_uris[split_name] = s3_uri
+
+    # Print summary
+    print("\n" + "=" * 80)
+    print("DATA PREPARATION COMPLETE")
+    print("=" * 80)
+    print("\nS3 URIs:")
+    print(f"  Training:   {s3_uris['training']}")
+    print(f"  Validation: {s3_uris['validation']}")
+    print(f"  Test:       {s3_uris['test']}")
+    print("\nNext steps:")
+    print("  • Use training URI for Bedrock fine-tuning job")
+    print("  • Use validation URI for batch inference and evaluation")
+    print("=" * 80)
 
 
 if __name__ == "__main__":
