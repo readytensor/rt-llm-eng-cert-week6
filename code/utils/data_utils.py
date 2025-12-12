@@ -131,3 +131,19 @@ def build_messages_for_sample(sample, task_instruction, include_assistant=False)
     if include_assistant:
         messages.append({"role": "assistant", "content": sample["summary"]})
     return messages
+
+
+def build_bedrock_llama_prompt(dialogue: str, task_instruction: str) -> str:
+    """
+    Format prompt for Bedrock's Llama models using their expected chat template.
+    Bedrock requires explicit special tokens, unlike local inference where
+    the tokenizer handles this automatically.
+    """
+    user_message = f"{task_instruction}\n## Dialogue:\n{dialogue}\n## Summary:"
+
+    formatted_prompt = f"""<|begin_of_text|><|start_header_id|>user<|end_header_id|>
+{user_message}
+<|eot_id|>
+<|start_header_id|>assistant<|end_header_id|>
+"""
+    return formatted_prompt
