@@ -4,7 +4,6 @@ Fully integrated with shared utilities and config.yaml.
 """
 
 import os
-import wandb
 import torch
 from dotenv import load_dotenv
 from torch.nn.utils.rnn import pad_sequence
