@@ -32,7 +32,8 @@ We need to attach a policy to your IAM user that allows reading IAM roles and pa
 3. Copy contents from `aws-setup/sagemaker/sagemaker-passrole-policy.json`
 4. Policy name: `SageMaker-PassRole-Policy`
 5. Create policy
-6. Attach policy to user group `ai-engineer`
+6. Attach policy to user group `ai-engineer`:
+   1. Go to IAM → User groups → `ai-engineer` -> Permissions -> Add permissions -> Attach Policy -> `SageMaker-PassRole-Policy`. You may need to filter the "by type" to "Customer Managed Policies" to locate the policy.
 
 ### 1.3 Create IAM User (If not already created)
 
