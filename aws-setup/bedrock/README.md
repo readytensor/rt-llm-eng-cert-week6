@@ -1,6 +1,6 @@
 # AWS Setup Guide for Bedrock Examples
 
-This guide walks through the IAM configuration needed to run the Bedrock inference and fine-tuning examples.
+This guide walks through the IAM configuration needed to run the Bedrock inference examples.
 
 ## Prerequisites
 
