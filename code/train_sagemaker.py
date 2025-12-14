@@ -1,5 +1,4 @@
 import os
-from sagemaker import Session
 from dotenv import load_dotenv
 from sagemaker.huggingface import HuggingFace
 from paths import CODE_DIR
@@ -14,8 +13,7 @@ hf_token = os.getenv("HF_TOKEN")
 
 
 cfg = load_config()
-# Session and S3 paths
-sess = Session()
+# S3 paths
 output_path = f"s3://{cfg['bucket']}/{cfg['output_path']}/"
 
 
@@ -29,7 +27,6 @@ huggingface_estimator = HuggingFace(
     transformers_version="4.56",
     pytorch_version="2.8",
     py_version="py312",
-    sagemaker_session=sess,
     environment={
         "HF_MODEL_ID": "meta-llama/Llama-3.2-1B-Instruct",
         "HF_TOKEN": hf_token,
