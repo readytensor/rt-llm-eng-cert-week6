@@ -111,8 +111,9 @@ Most models are already enabled. A few models like from Anthropic require approv
 
 1. Go to Bedrock → Cross-region inference (left sidebar)
 2. Click "Inference profiles" tab
-3. Search for "Llama 3.2 1B Instruct"
-4. Copy the Inference profile ID: `us.meta.llama3-2-1b-instruct-v1:0`
+3. Search for the model you selected in Step 3.1 (e.g., "Llama 3.2 1B Instruct")
+4. Copy the Inference profile ID
+   - Example for Llama 3.2 1B: `us.meta.llama3-2-1b-instruct-v1:0`
 5. Add to `code/config.yaml`:
 
 ```yaml
