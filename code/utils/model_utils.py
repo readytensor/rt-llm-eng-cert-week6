@@ -67,11 +67,8 @@ def setup_model_and_tokenizer(
         model_name,
         quantization_config=quant_cfg,
         device_map="auto",
-        dtype=(
-            torch.bfloat16
-            if cfg.get("bf16", True) and torch.cuda.is_available()
-            else torch.float32
-        ),
+        # Only use dtype if NOT quantizing
+        **({"dtype": torch.bfloat16} if not load_in_4bit and cfg.get("bf16", True) else {})
     )
 
     # ------------------------------
