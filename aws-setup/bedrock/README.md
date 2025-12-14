@@ -23,7 +23,20 @@ This guide walks through the IAM configuration needed to run the Bedrock inferen
 
    > **Note**: These are broad permissions for learning. In production, use more restrictive policies.
 
-### 1.2 Create IAM User
+Your IAM user needs permission to pass the Bedrock role to AWS services.
+
+### 1.2 Create PassRole Policy and Attach to User Group
+
+1. Go to IAM → Policies → Create policy
+2. Click JSON tab
+3. Copy contents from `aws-setup/bedrock/bedrock-passrole-policy.json`
+4. **Replace `YOUR_ACCOUNT_ID`** with your AWS account ID
+5. Policy name: `Bedrock-PassRole-Policy`
+6. Create policy
+7. Attach policy to user group `ai-engineer`:
+   1. Go to IAM → User groups → `ai-engineer` -> Permissions -> Add permissions -> Attach Policy -> `Bedrock-PassRole-Policy`. You may need to filter the "by type" to "Customer Managed Policies" to locate the policy.
+
+### 1.3 Create IAM User
 
 (if not already created)
 
@@ -35,7 +48,7 @@ This guide walks through the IAM configuration needed to run the Bedrock inferen
    - Choose "Command Line Interface (CLI)"
    - Download or save the Access Key ID and Secret Access Key
 
-### 1.3 Configure AWS CLI
+### 1.4 Configure AWS CLI
 
 ```bash
 aws configure
@@ -50,19 +63,51 @@ Enter:
 
 ---
 
-## Step 2: Request Bedrock Model Access
+## Step 2: Create Bedrock Execution Role
 
-(most models are already enabled. A few models like from Anthropic require approval)
-Note: The AWS console may have changed but follow the steps in essence.
+This role allows Bedrock to access your S3 data and invoke models on your behalf.
 
-1. Go to AWS Console → Bedrock → Model access (left sidebar)
-2. Click "Manage model access"
-3. Find and enable:
-   - **Llama 3.2 1B Instruct** (Meta)
-4. Click "Save changes"
-5. Wait for "Access granted" status (usually instant)
+### 2.1 Create Custom Policy
 
-### Get Inference Profile ID
+1. Go to IAM → Policies → Create policy
+2. Click JSON tab
+3. Copy contents from `aws-setup/bedrock/bedrock-execution-role-policy.json`
+4. **Replace `YOUR_BUCKET_NAME`** with your actual bucket name (e.g., `bedrock-bucket-llm-eng-testing`)
+5. Policy name: `Bedrock-Execution-Role-Policy` (you can name it anything, but make sure to replace it in the next step)
+6. Create policy
+
+### 2.2 Create IAM Role
+
+1. Go to IAM → Roles → Create role
+2. Trusted entity type: **Custom trust policy**
+3. Copy contents from `aws-setup/bedrock/bedrock-trust-policy.json`
+4. Click Next
+5. Attach policy: `Bedrock-Execution-Role-Policy` (created above)
+6. Role name: `Bedrock-Job-Execution-Role`
+7. Create role
+
+### 2.3 Save Role ARN
+
+1. Go to IAM → Roles → `Bedrock-Job-Execution-Role`
+2. Copy the ARN (e.g., `arn:aws:iam::123456789012:role/Bedrock-Job-Execution-Role`)
+3. Add to `.env` file (create if not exists):
+
+```bash
+   BEDROCK_ROLE_ARN=arn:aws:iam::YOUR_ACCOUNT_ID:role/Bedrock-Job-Execution-Role
+   AWS_REGION=us-east-1
+```
+
+---
+
+## Step 3: Choose a LLM and Get Inference Profile ID
+
+### 3.1 Choose a LLM
+
+Go to AWS Console → Bedrock → Model Catalog. Choose a LLM.
+
+Most models are already enabled. A few models like from Anthropic require approval. If required, request access on the model page.
+
+### 3.2 Get Inference Profile ID
 
 1. Go to Bedrock → Cross-region inference (left sidebar)
 2. Click "Inference profiles" tab
@@ -76,78 +121,17 @@ bedrock_model_id: us.meta.llama3-2-1b-instruct-v1:0
 
 ---
 
-## Step 3: Create Bedrock Execution Role
-
-This role allows Bedrock to access your S3 data and invoke models on your behalf.
-
-### 3.1 Create Custom Policy
-
-1. Go to IAM → Policies → Create policy
-2. Click JSON tab
-3. Copy contents from `aws-setup/bedrock-job-execution-policy.json`
-4. **Replace `YOUR_BUCKET_NAME`** with your actual bucket name (e.g., `bedrock-bucket-llm-eng-testing`)
-5. Policy name: `Bedrock-Job-Execution-Policy` (you can name it anything, but make sure to replace it in the next step)
-6. Create policy
-
-### 3.2 Create IAM Role
-
-1. Go to IAM → Roles → Create role
-2. Trusted entity type: **Custom trust policy**
-3. Copy contents from `aws-setup/bedrock-role-trust-policy.json`
-4. Click Next
-5. Attach policy: `Bedrock-Job-Execution-Policy` (created above)
-6. Role name: `Bedrock-Job-Execution-Role`
-7. Create role
-
-### 3.3 Save Role ARN
-
-1. Go to IAM → Roles → `Bedrock-Job-Execution-Role`
-2. Copy the ARN (e.g., `arn:aws:iam::123456789012:role/Bedrock-Job-Execution-Role`)
-3. Add to `.env` file:
-
-```bash
-   BEDROCK_ROLE_ARN=arn:aws:iam::YOUR_ACCOUNT_ID:role/Bedrock-Job-Execution-Role
-   AWS_REGION=us-east-1
-```
-
----
-
-## Step 4: Allow PassRole Permission
-
-Your IAM user needs permission to pass the Bedrock role to AWS services.
-
-### 4.1 Create PassRole Policy
-
-1. Go to IAM → User groups → `ai-engineer`
-2. Click "Add permissions" → "Create inline policy"
-3. Click JSON tab
-4. Copy contents from `aws-setup/bedrock-passrole-policy.json`
-5. **Replace `YOUR_ACCOUNT_ID`** with your AWS account ID
-6. Policy name: `Bedrock-PassRole-Policy`
-7. Create policy
-
----
-
 ## Verification Checklist
 
 Before running the examples, verify:
 
-- [ ] AWS CLI configured with credentials
-- [ ] Inference profile ID added to `config.yaml`
+- [ ] Your user-group `ai-engineer` created with `AmazonBedrockFullAccess` and `AmazonS3FullAccess` policies
+- [ ] PassRole permission added to your user group `ai-engineer`
 - [ ] IAM role `Bedrock-Job-Execution-Role` created
 - [ ] Role ARN added to `.env` file
-- [ ] PassRole permission added to your user group
+- [ ] Inference profile ID for chosen LLM added to `config.yaml`
+- [ ] AWS CLI configured with credentials
 - [ ] Dependencies installed in virtual environment
-
----
-
-## Cost Considerations
-
-- **Inference**: Charged per input/output token
-- **Batch Inference**: Lower cost than real-time inference
-- **S3 Storage**: Minimal cost for small datasets
-
-Always clean up resources after learning exercises to avoid unnecessary charges.
 
 ---
 
