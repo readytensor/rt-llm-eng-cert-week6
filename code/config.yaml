@@ -73,10 +73,10 @@ wandb_run_name: lora-finetuning-default-hps
 # ==============================================
 # SageMaker Configuration
 # ==============================================
-sagemaker_instance_type: ml.p3.2xlarge
+sagemaker_instance_type: ml.g5.2xlarge
 sagemaker_instance_count: 1
 sagemaker_base_job_name: llama-3-2-1b-instruct-train
-bucket: sagemaker-llm-training-bucket
+bucket: sagemaker-llm-training-us-east-1
 output_path: outputs/llama3-2-1b-samsum-finetune
 
 # ==============================================
