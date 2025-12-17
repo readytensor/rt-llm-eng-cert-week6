@@ -25,3 +25,6 @@ cdk.context.json
 # custom folders to ignore
 tmp/
 data/datasets/
+
+node_modules/
+lessons/

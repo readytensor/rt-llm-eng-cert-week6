@@ -8,6 +8,7 @@ Formats dataset into JSONL with Llama's chat template and uploads to S3.
 import json
 import os
 import yaml
+import boto3
 from utils.data_utils import load_and_prepare_dataset
 from paths import CONFIG_FILE_PATH, PROCESSED_DATA_DIR
 from create_s3_bucket import create_s3_bucket
@@ -90,8 +91,6 @@ def upload_to_s3(local_file, bucket, s3_key):
     Returns:
         S3 URI of uploaded file
     """
-    import boto3
-
     s3_client = boto3.client("s3")
 
     print(f"Uploading to s3://{bucket}/{s3_key}...")
