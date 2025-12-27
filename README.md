@@ -1,6 +1,6 @@
-# LLM Engineering & Deployment - Week 7 Code Examples
+# LLM Engineering & Deployment - Week 6 Code Examples
 
-**Week 7: AWS Infrastructure for LLM Engineering**  
+**Week 6: AWS Infrastructure for LLM Engineering**  
 Part of the LLM Engineering & Deployment Certification Program
 
 This repository contains examples for working with LLMs on AWS using two different approaches:
